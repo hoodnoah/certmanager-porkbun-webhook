@@ -7,6 +7,7 @@ import (
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook"
 	cmacme "github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -15,6 +16,7 @@ import (
 )
 
 type PorkBunSolver struct {
+	logger        logr.Logger
 	KubeClient    kubernetes.Interface         // interacts with the kubernetes client
 	PorkBunClient *porkbunclient.PorkBunClient // interacts with the PorkBun API
 }
@@ -31,8 +33,9 @@ func (s *PorkBunSolver) Name() string {
 }
 
 // ctor for PorkBunSolver
-func NewPorkBunSolver(kubeClient kubernetes.Interface, porkBunClient *porkbunclient.PorkBunClient) *PorkBunSolver {
+func NewPorkBunSolver(logger logr.Logger, kubeClient kubernetes.Interface, porkBunClient *porkbunclient.PorkBunClient) *PorkBunSolver {
 	return &PorkBunSolver{
+		logger:        logger,
 		KubeClient:    kubeClient,
 		PorkBunClient: porkBunClient,
 	}
@@ -41,9 +44,11 @@ func NewPorkBunSolver(kubeClient kubernetes.Interface, porkBunClient *porkbuncli
 func (s *PorkBunSolver) Present(cr *cmacme.ChallengeRequest) error {
 	// Parse domain and subdomain
 	domain, subdomain := parseDomainAndSubdomain(cr.ResolvedFQDN)
+	s.logger.Info("Parsed domain and subdomain for Present", "domain", domain, "subdomain", subdomain)
 
 	// call porkbun client to create DNS record
 	if err := s.PorkBunClient.CreateDNSRecord(domain, cr.Key, subdomain); err != nil {
+		s.logger.Error(err, "Failed to create DNS record; Present")
 		return err
 	}
 
@@ -53,9 +58,11 @@ func (s *PorkBunSolver) Present(cr *cmacme.ChallengeRequest) error {
 func (s *PorkBunSolver) CleanUp(cr *cmacme.ChallengeRequest) error {
 	// parse domain and subdomain
 	domain, subdomain := parseDomainAndSubdomain(cr.ResolvedFQDN)
+	s.logger.Info("Parsed domain and subdomain for CleanUp", "domain", domain, "subdomain", subdomain)
 
 	// call porkbun client to delete DNS record
 	if err := s.PorkBunClient.DeleteDNSRecord(domain, subdomain); err != nil {
+		s.logger.Error(err, "Failed to delete DNS record; CleanUp")
 		return err
 	}
 

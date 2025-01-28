@@ -30,18 +30,23 @@ func main() {
 
 	// load API keys from environment variables
 	apiKey := os.Getenv("PORKBUN_API_KEY")
-	secretKey := os.Getenv("PORKBUN_SECRET")
+	secretKey := os.Getenv("PORKBUN_SECRET_KEY")
 
-	if apiKey == "" || secretKey == "" {
-		logger.Error(err, "API keys not found in environment variables. Exiting.")
+	if apiKey == "" {
+		logger.Error(err, "API Key not found in environment variables. Exiting.")
+		os.Exit(1)
+	}
+
+	if secretKey == "" {
+		logger.Error(err, "Secret Key not found in environment variables. Exiting.")
 		os.Exit(1)
 	}
 
 	// create a new PorkBunClient
-	porkBunClient := porkbunclient.NewPorkBunClient(apiKey, secretKey)
+	porkBunClient := porkbunclient.NewPorkBunClient(logger, apiKey, secretKey)
 
 	// create solver
-	solver := porkbunsolver.NewPorkBunSolver(nil, porkBunClient)
+	solver := porkbunsolver.NewPorkBunSolver(logger, nil, porkBunClient)
 
 	// start webhook server
 	if err := startWebhookServer(solver, logger); err != nil {
@@ -62,7 +67,7 @@ func startWebhookServer(solver *porkbunsolver.PorkBunSolver, logger logr.Logger)
 
 	logger.Info("Webhook server listening on :8443")
 
-	return server.ListenAndServeTLS("/tls/tls.crt", "tls/tls.key")
+	return server.ListenAndServeTLS("/Users/noahhood/Documents/Repositories/certmanager-porkbun-webook/tls/tls.cert", "/Users/noahhood/Documents/Repositories/certmanager-porkbun-webook/tls/tls.key")
 }
 
 func setupRouter(solver *porkbunsolver.PorkBunSolver) http.Handler {
