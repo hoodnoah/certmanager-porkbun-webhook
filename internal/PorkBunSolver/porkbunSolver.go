@@ -61,7 +61,7 @@ func (s *PorkBunSolver) CleanUp(cr *cmacme.ChallengeRequest) error {
 	s.logger.Info("Parsed domain and subdomain for CleanUp", "domain", domain, "subdomain", subdomain)
 
 	// call porkbun client to delete DNS record
-	if err := s.PorkBunClient.DeleteDNSRecord(domain, subdomain); err != nil {
+	if err := s.PorkBunClient.DeleteDNSRecord(domain, cr.Key, subdomain); err != nil {
 		s.logger.Error(err, "Failed to delete DNS record; CleanUp")
 		return err
 	}
