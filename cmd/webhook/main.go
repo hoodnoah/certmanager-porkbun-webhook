@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap"
 
 	// internal
-
 	porkbunsolver "github.com/hoodnoah/certmanager-porkbun-webhook/internal/PorkBunSolver"
 )
 
@@ -50,7 +49,7 @@ func startWebhookServer(solver *porkbunsolver.PorkBunSolver, logger logr.Logger)
 
 	logger.Info("Webhook server listening on :8443")
 
-	return server.ListenAndServeTLS("/Users/noahhood/Documents/Repositories/certmanager-porkbun-webook/tls/tls.cert", "/Users/noahhood/Documents/Repositories/certmanager-porkbun-webook/tls/tls.key")
+	return server.ListenAndServeTLS("/tls/tls.crt", "/tls/tls.key")
 }
 
 func setupRouter(solver *porkbunsolver.PorkBunSolver) http.Handler {
