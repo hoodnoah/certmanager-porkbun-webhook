@@ -2,13 +2,13 @@
   description = "Development shell for local k8s, Docker, Helm, Minikube for testing";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref-nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-24.05";
   };
 
   outputs = {self, nixpkgs}:
     let
       # list supported architectures
-      supportedSystems = ["x86_64-linux", "aarch64-darwin"];
+      supportedSystems = ["x86_64-linux" "aarch64-darwin"];
 
       # function to produce development shell for a given supported system
       mkDevShell = system:
@@ -16,12 +16,14 @@
           pkgs = import nixpkgs {system = system;};
         in
           pkgs.mkShell {
-            pkgs.minikube
-            pkgs.kubectl
-            pkgs.helm
-            pkgs.docker
-            pkgs.git
-          };
+            buildInputs = [
+              pkgs.minikube
+              pkgs.kubectl
+              pkgs.kubernetes-helm
+              pkgs.docker
+              pkgs.git
+            ];
+         };
 
   # helper function to get nixpkgs for a given platform
   forAllSystems = systems: f: builtins.listToAttrs (map (system: {
@@ -31,5 +33,5 @@
 
   in {
     devShell = forAllSystems supportedSystems mkDevShell;
-  }
+  };
 }
