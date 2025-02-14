@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: porkbun-webhook
+  labels:
+    app: porkbun-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: porkbun-webhook
+  template:
+    metadata:
+      labels:
+        app: porkbun-webhook
+    spec:
+      serviceAccountName: porkbun-webhook
+      containers:
+        - name: porkbun-webhook
+          image: porkbun-webhook:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - --tls-cert-file=/tls/cert.pem
+            - --tls-private-key-file=/tls/key.pem
+          env:
+            - name: GROUP_NAME
+              value: acme.noah-hood.io
+          ports:
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: https
+          volumeMounts:
+            - name: certs
+              mountPath: /tls
+              readOnly: true
+    volumes:
+      - name: certs
+        secret:
+          secretName: porkbun-webhook-webhook-tls

@@ -1,0 +1,69 @@
+---
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: porkbun-webhook-selfsign
+  namespace: cert-manager
+  labels:
+    app: porkbun-webhook
+spec:
+  selfSigned: {}
+
+---
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: porkbun-webhook-ca
+  namespace: cert-manager
+  labels:
+    app: porkbun-webhook
+spec:
+  secretName: porkbun-webhook-ca
+  duration: 43800h0m0s # 5y
+  issuerRef:
+    name: porkbun-webhook-selfsign
+  commonName: "ca.porkbun-webhook.cert-manager"
+  isCA: true
+  usages:
+    - digital signature
+    - key encipherment
+    - cert sign
+
+---
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: porkbun-webhook-ca
+  namespace: cert-manager
+  labels:
+    app: porkbun-webhook
+spec:
+  ca:
+    secretName: porkbun-webhook-ca
+
+---
+# Finally, generate a serving certificate for the webhook to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: porkbun-webhook-webhook-tls 
+  namespace: cert-manager
+  labels:
+    app: porkbun-webhook
+spec:
+  secretName: porkbun-webhook-webhook-tls
+  duration: 8760h0m0s # 1y
+  issuerRef:
+    name: porkbun-webhook-ca
+  dnsNames:
+    - porkbun-webhook
+    - porkbun-webhook.cert-manager
+    - porkbun-webhook.cert-manager.svc
+    - porkbun-webhook.cert-manager.cluster.local
+  usages:
+    - server auth
+  

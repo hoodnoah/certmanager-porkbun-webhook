@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: porkbun-webhook
+  labels:
+    app: porkbun-webhook
+spec:
+  type: ClusterIP
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    app: porkbun-webhook

@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: hood.noah@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-key
+    solvers:
+      - selector:
+          dnsZones:
+            - noah-hood.io
+          dns01:
+            webhook:
+              groupName: "acme.noah-hood.io"
+              solverName: porkbun
+              config:
+                apiKeySecretRef:
+                  name: porkbun-credentials
+                  key: PORKBUN_API_KEY
+                secretKeySecretRef:
+                  name: porkbun-credentials
+                  key: PORKBUN_SECRET_KEY

@@ -20,7 +20,6 @@
               pkgs.minikube
               pkgs.kubectl
               pkgs.kubernetes-helm
-              pkgs.docker
               pkgs.git
             ];
          };

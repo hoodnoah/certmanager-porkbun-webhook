@@ -1,0 +1,15 @@
+kind: APIService
+metadata:
+  name: v1alpha1.acme.noah-hood.io
+  labels:
+    app: porkbun-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: cert-manager/porkbun-webhook-webhook-tls
+spec:
+  group: acme.noah-hood.io
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: porkbun-webhook
+    namespace: cert-manager
+  version: v1alpha1
