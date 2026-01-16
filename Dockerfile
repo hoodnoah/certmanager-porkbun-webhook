@@ -1,4 +1,4 @@
-FROM golang:1.24.0-alpine3.21 AS build_deps
+FROM golang:1.24-alpine3.21 AS build_deps
 
 RUN apk add --no-cache git
 
@@ -13,7 +13,7 @@ FROM build_deps AS build
 
 COPY . .
 
-RUN GCO_ENABLED=0 go build -o webhook -ldflags '-w -extldflags "-static"' .
+RUN CGO_ENABLED=0 go build -o webhook -ldflags '-s -w -extldflags "-static"' .
 
 FROM alpine:3.21
 
