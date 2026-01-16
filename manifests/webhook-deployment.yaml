@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: porkbun-webhook
+  namespace: cert-manager
   labels:
     app: porkbun-webhook
 spec:
@@ -20,8 +21,8 @@ spec:
           image: porkbun-webhook:latest
           imagePullPolicy: IfNotPresent
           args:
-            - --tls-cert-file=/tls/cert.pem
-            - --tls-private-key-file=/tls/key.pem
+            - --tls-cert-file=/tls/tls.crt
+            - --tls-private-key-file=/tls/tls.key
           env:
             - name: GROUP_NAME
               value: acme.noah-hood.io
@@ -38,7 +39,7 @@ spec:
             - name: certs
               mountPath: /tls
               readOnly: true
-    volumes:
-      - name: certs
-        secret:
-          secretName: porkbun-webhook-webhook-tls
+      volumes:
+        - name: certs
+          secret:
+            secretName: porkbun-webhook-webhook-tls

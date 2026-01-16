@@ -115,13 +115,14 @@ func (p *porkbunSolver) Present(challenge *acme.ChallengeRequest) error {
 
 	p.logger.Printf("Received ACME challenge for %s...", challenge.ResolvedFQDN)
 
-	// separate domain, subdomain parts from the FQDN
-	// req'd by porkbun API arguments
-	splitDomain := util.SplitFQDN(challenge.ResolvedFQDN)
-	p.logger.Printf("domain: %s, subdomain: %s", splitDomain.Domain, splitDomain.Subdomain)
+	// extract domain and subdomain from challenge
+	// ResolvedZone contains the actual registered domain (e.g., "noah-hood.io.")
+	// ResolvedFQDN contains the full challenge FQDN (e.g., "_acme-challenge.test.noah-hood.io.")
+	domain, subdomain := util.ExtractDomainAndSubdomain(challenge.ResolvedFQDN, challenge.ResolvedZone)
+	p.logger.Printf("domain: %s, subdomain: %s", domain, subdomain)
 
 	// create record with helper fn
-	if err := util.CreateDNSRecordByNameTypeIfNotExists(p.pbClient, splitDomain.Domain, splitDomain.Subdomain, challenge.Key); err != nil {
+	if err := util.CreateDNSRecordByNameTypeIfNotExists(p.pbClient, domain, subdomain, challenge.Key); err != nil {
 		p.logger.Printf("failed to create DNS Record by name type for %s with error %v", challenge.ResolvedFQDN, err)
 		return err
 	}
@@ -137,13 +138,12 @@ func (p *porkbunSolver) CleanUp(challenge *acme.ChallengeRequest) error {
 
 	p.logger.Printf("Received cleanup call for %s...", challenge.ResolvedFQDN)
 
-	// separate domain, subcomain parts from the FQDN
-	// req'd by porkbun API arguments
-	splitDomain := util.SplitFQDN(challenge.ResolvedFQDN)
-	p.logger.Printf("domain: %s, subdomain: %s", splitDomain.Domain, splitDomain.Subdomain)
+	// extract domain and subdomain from challenge
+	domain, subdomain := util.ExtractDomainAndSubdomain(challenge.ResolvedFQDN, challenge.ResolvedZone)
+	p.logger.Printf("domain: %s, subdomain: %s", domain, subdomain)
 
 	// delete record with helper fn
-	if err := util.DeleteDNSRecordByNameTypeIfExists(p.pbClient, splitDomain.Domain, splitDomain.Subdomain, challenge.Key); err != nil {
+	if err := util.DeleteDNSRecordByNameTypeIfExists(p.pbClient, domain, subdomain, challenge.Key); err != nil {
 		p.logger.Printf("failed to delete DNS Record by name type for %s with error %v", challenge.ResolvedFQDN, err)
 		return err
 	}

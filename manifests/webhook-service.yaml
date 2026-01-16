@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: porkbun-webhook
+  namespace: cert-manager
   labels:
     app: porkbun-webhook
 spec:

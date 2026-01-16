@@ -21,6 +21,8 @@
               pkgs.kubectl
               pkgs.kubernetes-helm
               pkgs.git
+              pkgs.just
+              pkgs.go
             ];
          };
 
