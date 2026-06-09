@@ -1,10 +1,9 @@
 # Cert-Manager Porkbun Webhook - Justfile
-
 # =============================================================================
 # Configuration
 # =============================================================================
-
 # Registry and repository settings
+
 github_user := "hoodnoah"
 repo_name := "certmanager-porkbun-webhook"
 registry := "ghcr.io"
@@ -12,6 +11,7 @@ repo := github_user + "/" + repo_name
 image_name := "porkbun-webhook"
 
 # Kubernetes settings
+
 namespace := "cert-manager"
 app_label := "porkbun-webhook"
 
@@ -36,7 +36,7 @@ build-minikube:
     #!/usr/bin/env bash
     set -euo pipefail
     eval $(minikube docker-env)
-    docker build -t {{image_name}}:latest .
+    docker build -t {{ image_name }}:latest .
     echo "Image built and available in minikube"
 
 # =============================================================================
@@ -45,7 +45,7 @@ build-minikube:
 
 # Build image locally
 build:
-    docker build -t {{image_name}}:latest .
+    docker build -t {{ image_name }}:latest .
 
 # Build and push to GHCR (usage: just release 0.1.0)
 release version:
@@ -55,15 +55,15 @@ release version:
     docker buildx build \
         --platform linux/amd64 \
         -f Dockerfile \
-        -t {{registry}}/{{repo}}:{{version}} \
-        -t {{registry}}/{{repo}}:latest \
+        -t {{ registry }}/{{ repo }}:{{ version }} \
+        -t {{ registry }}/{{ repo }}:latest \
         --push .
 
     echo "Tagging release in git..."
-    git tag -a v{{version}} -m "Release v{{version}}"
-    git push origin v{{version}}
+    git tag -a {{ version }} -m "Release {{ version }}"
+    git push origin {{ version }}
 
-    echo "Released {{registry}}/{{repo}}:{{version}}"
+    echo "Released {{ registry }}/{{ repo }}:{{ version }}"
 
 # Build multi-arch and push to GHCR (usage: just release-multiarch 0.1.0)
 release-multiarch version:
@@ -73,15 +73,15 @@ release-multiarch version:
     docker buildx build \
         --platform linux/amd64,linux/arm64 \
         -f Dockerfile \
-        -t {{registry}}/{{repo}}:{{version}} \
-        -t {{registry}}/{{repo}}:latest \
+        -t {{ registry }}/{{ repo }}:{{ version }} \
+        -t {{ registry }}/{{ repo }}:latest \
         --push .
 
     echo "Tagging release in git..."
-    git tag -a v{{version}} -m "Release v{{version}}"
-    git push origin v{{version}}
+    git tag -a {{ version }} -m "Release {{ version }}"
+    git push origin {{ version }}
 
-    echo "Released {{registry}}/{{repo}}:{{version}} (multi-arch)"
+    echo "Released {{ registry }}/{{ repo }}:{{ version }} (multi-arch)"
 
 # =============================================================================
 # Kubernetes Deployment
@@ -92,10 +92,10 @@ install-cert-manager:
     helm repo add jetstack https://charts.jetstack.io
     helm repo update
     helm install cert-manager jetstack/cert-manager \
-        --namespace {{namespace}} \
+        --namespace {{ namespace }} \
         --create-namespace \
         --set crds.enabled=true
-    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n {{namespace}} --timeout=120s
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n {{ namespace }} --timeout=120s
 
 # Deploy all webhook manifests (for minikube with local image)
 deploy-local: build-minikube
@@ -103,11 +103,11 @@ deploy-local: build-minikube
     set -euo pipefail
     echo "Applying manifests..."
     kubectl apply -f manifests/pki.yaml
-    kubectl wait --for=condition=ready certificate -n {{namespace}} porkbun-webhook-ca porkbun-webhook-webhook-tls --timeout=60s
+    kubectl wait --for=condition=ready certificate -n {{ namespace }} porkbun-webhook-ca porkbun-webhook-webhook-tls --timeout=60s
     kubectl apply -f manifests/rbac.yaml
     kubectl apply -f manifests/webhook-service.yaml
     kubectl apply -f manifests/webhook-deployment.yaml
-    kubectl wait --for=condition=ready pod -l app={{app_label}} -n {{namespace}} --timeout=90s
+    kubectl wait --for=condition=ready pod -l app={{ app_label }} -n {{ namespace }} --timeout=90s
     kubectl apply -f manifests/apiservice.yaml
     echo "Webhook deployed successfully"
 
@@ -117,11 +117,11 @@ deploy:
     set -euo pipefail
     echo "Applying manifests..."
     kubectl apply -f manifests/pki.yaml
-    kubectl wait --for=condition=ready certificate -n {{namespace}} porkbun-webhook-ca porkbun-webhook-webhook-tls --timeout=60s
+    kubectl wait --for=condition=ready certificate -n {{ namespace }} porkbun-webhook-ca porkbun-webhook-webhook-tls --timeout=60s
     kubectl apply -f manifests/rbac.yaml
     kubectl apply -f manifests/webhook-service.yaml
     kubectl apply -f manifests/webhook-deployment.yaml
-    kubectl wait --for=condition=ready pod -l app={{app_label}} -n {{namespace}} --timeout=90s
+    kubectl wait --for=condition=ready pod -l app={{ app_label }} -n {{ namespace }} --timeout=90s
     kubectl apply -f manifests/apiservice.yaml
     echo "Webhook deployed successfully"
 
@@ -169,24 +169,24 @@ test-e2e: deploy-local apply-secret deploy-issuers test-staging
 
 # Tail webhook logs
 logs:
-    kubectl logs -n {{namespace}} -l app={{app_label}} -f
+    kubectl logs -n {{ namespace }} -l app={{ app_label }} -f
 
 # Tail webhook logs (last 50 lines)
 logs-tail:
-    kubectl logs -n {{namespace}} -l app={{app_label}} --tail=50
+    kubectl logs -n {{ namespace }} -l app={{ app_label }} --tail=50
 
 # Tail cert-manager controller logs
 logs-cm:
-    kubectl logs -n {{namespace}} -l app=cert-manager -f
+    kubectl logs -n {{ namespace }} -l app=cert-manager -f
 
 # Describe webhook pod
 describe:
-    kubectl describe pod -n {{namespace}} -l app={{app_label}}
+    kubectl describe pod -n {{ namespace }} -l app={{ app_label }}
 
 # Get webhook pod status
 status:
     @echo "=== Webhook Pod ==="
-    kubectl get pods -n {{namespace}} -l app={{app_label}}
+    kubectl get pods -n {{ namespace }} -l app={{ app_label }}
     @echo ""
     @echo "=== API Service ==="
     kubectl get apiservices | grep acme
@@ -213,7 +213,7 @@ orders:
 
 # Shell into webhook pod
 shell:
-    kubectl exec -it -n {{namespace}} $(kubectl get pods -n {{namespace}} -l app={{app_label}} -o jsonpath='{.items[0].metadata.name}') -- /bin/sh
+    kubectl exec -it -n {{ namespace }} $(kubectl get pods -n {{ namespace }} -l app={{ app_label }} -o jsonpath='{.items[0].metadata.name}') -- /bin/sh
 
 # =============================================================================
 # Utilities
@@ -221,19 +221,19 @@ shell:
 
 # Check DNS propagation for a domain (usage: just check-dns test.noah-hood.io)
 check-dns domain:
-    dig TXT _acme-challenge.{{domain}} +short
+    dig TXT _acme-challenge.{{ domain }} +short
 
 # Restart webhook deployment
 restart:
-    kubectl rollout restart deployment {{app_label}} -n {{namespace}}
+    kubectl rollout restart deployment {{ app_label }} -n {{ namespace }}
 
 # Get events in cert-manager namespace
 events:
-    kubectl get events -n {{namespace}} --sort-by='.lastTimestamp'
+    kubectl get events -n {{ namespace }} --sort-by='.lastTimestamp'
 
 # Port-forward webhook for local debugging
 port-forward:
-    kubectl port-forward -n {{namespace}} svc/{{app_label}} 8443:443
+    kubectl port-forward -n {{ namespace }} svc/{{ app_label }} 8443:443
 
 # =============================================================================
 # Full Workflow Shortcuts
