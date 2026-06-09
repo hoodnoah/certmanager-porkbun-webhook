@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 
 	// internal
@@ -65,7 +66,30 @@ func (p *porkbunSolver) Name() string {
 // initializes the porkbun struct; allows the collection of
 // secrets from the cluster, as req'd for initializing the porkbun API wrapper
 // i.e. `apiKey` and `secretKey`
+//
+// Credentials are sourced in priority order:
+//  1. Ambient credentials: the PORKBUN_API_KEY and PORKBUN_SECRET_KEY
+//     environment variables, if BOTH are set. This path is used by the
+//     cert-manager DNS01 conformance suite, whose test fixture calls
+//     Initialize against an ephemeral apiserver before any secrets exist
+//     in it. It also serves as an escape hatch for running the webhook
+//     with credentials injected via the deployment spec.
+//  2. The `porkbun-credentials` secret in the `cert-manager` namespace,
+//     fetched from the cluster (production path; unchanged behavior).
 func (p *porkbunSolver) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
+	// 1: ambient credentials from the environment
+	apiKeyEnv, secretKeyEnv := os.Getenv(apiKeySecretName), os.Getenv(secretKeySecretName)
+	if apiKeyEnv != "" && secretKeyEnv != "" {
+		p.pbClient.SetAPIKey(apiKeyEnv)
+		p.pbClient.SetSecretKey(secretKeyEnv)
+
+		p.logger.Printf("Loaded api key, secret key from environment variables %s, %s; skipping in-cluster secret lookup.", apiKeySecretName, secretKeySecretName)
+		p.logger.Print("Ready to handle ACME challenges.")
+
+		return nil
+	}
+
+	// 2: fetch credentials from the cluster
 	// create a Kubernetes clientset; gives access to the cluster API at runtime
 	clientSet, err := kubernetes.NewForConfig(kubeClientConfig)
 	if err != nil {

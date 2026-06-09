@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Fast, secret-free checks: does it compile, does it vet clean, does the
+  # Dockerfile still build (catches Renovate base-image bumps).
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        # -tags conformance compile-checks main_test.go without needing the
+        # envtest binaries (vet doesn't execute package init)
+        run: go vet -tags conformance ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+
+  # cert-manager's upstream DNS01 conformance suite. Spins up an ephemeral
+  # kube-apiserver + etcd via envtest (no cluster required), then exercises
+  # Present/CleanUp against the REAL Porkbun API: it creates the TXT record
+  # cert-manager-dns01-tests.<zone>, waits for authoritative DNS propagation,
+  # deletes it, and waits for it to disappear. Typically completes in a
+  # couple of minutes.
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # The fixture needs etcd, kube-apiserver, and kubectl binaries.
+      # cert-manager's test wrapper locates them via TEST_ASSET_* env vars
+      # (it does NOT honor KUBEBUILDER_ASSETS). setup-envtest@release-0.20
+      # matches the controller-runtime v0.20 / k8s.io v0.32 line in go.mod.
+      - name: Install envtest binaries
+        run: |
+          BIN_PATH="$(go run sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20 use 1.32.x --bin-dir "${RUNNER_TEMP:-/tmp}/envtest" -p path)"
+          {
+            echo "TEST_ASSET_ETCD=${BIN_PATH}/etcd"
+            echo "TEST_ASSET_KUBE_APISERVER=${BIN_PATH}/kube-apiserver"
+            echo "TEST_ASSET_KUBECTL=${BIN_PATH}/kubectl"
+          } >> "$GITHUB_ENV"
+
+      - name: Run DNS01 conformance suite
+        env:
+          # The zone is intrinsic to the Porkbun account, so it's hardcoded;
+          # move it to a repo variable if you ever need to vary it.
+          TEST_ZONE_NAME: noah-hood.io.
+          PORKBUN_API_KEY: ${{ secrets.PORKBUN_API_KEY }}
+          PORKBUN_SECRET_KEY: ${{ secrets.PORKBUN_SECRET_KEY }}
+        run: go test -v -tags conformance -timeout 15m ./...
