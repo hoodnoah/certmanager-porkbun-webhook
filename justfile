@@ -1,3 +1,5 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
 # Cert-Manager Porkbun Webhook - Justfile
 # =============================================================================
 # Configuration
@@ -34,8 +36,7 @@ minikube-delete:
 # Build image directly into minikube's Docker daemon
 build-minikube:
     #!/usr/bin/env bash
-    set -euo pipefail
-    eval $(minikube docker-env)
+    eval $(minikube docker-env --shell bash)
     docker build -t {{ image_name }}:latest .
     echo "Image built and available in minikube"
 
@@ -49,8 +50,6 @@ build:
 
 # Build and push to GHCR (usage: just release 0.1.0)
 release version:
-    #!/usr/bin/env bash
-    set -euo pipefail
     echo "Building webhook image for linux/amd64..."
     docker buildx build \
         --platform linux/amd64 \
@@ -67,8 +66,6 @@ release version:
 
 # Build multi-arch and push to GHCR (usage: just release-multiarch 0.1.0)
 release-multiarch version:
-    #!/usr/bin/env bash
-    set -euo pipefail
     echo "Building webhook image for linux/amd64 and linux/arm64..."
     docker buildx build \
         --platform linux/amd64,linux/arm64 \
@@ -99,8 +96,6 @@ install-cert-manager:
 
 # Deploy all webhook manifests (for minikube with local image)
 deploy-local: build-minikube
-    #!/usr/bin/env bash
-    set -euo pipefail
     echo "Applying manifests..."
     kubectl apply -f manifests/pki.yaml
     kubectl wait --for=condition=ready certificate -n {{ namespace }} porkbun-webhook-ca porkbun-webhook-webhook-tls --timeout=60s
@@ -113,8 +108,6 @@ deploy-local: build-minikube
 
 # Deploy all webhook manifests (for remote cluster with registry image)
 deploy:
-    #!/usr/bin/env bash
-    set -euo pipefail
     echo "Applying manifests..."
     kubectl apply -f manifests/pki.yaml
     kubectl wait --for=condition=ready certificate -n {{ namespace }} porkbun-webhook-ca porkbun-webhook-webhook-tls --timeout=60s

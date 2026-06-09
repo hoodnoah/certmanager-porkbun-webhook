@@ -12,14 +12,14 @@ spec:
       - selector:
           dnsZones:
             - noah-hood.io
-          dns01:
-            webhook:
-              groupName: "acme.noah-hood.io"
-              solverName: porkbun
-              config:
-                apiKeySecretRef:
-                  name: porkbun-credentials
-                  key: PORKBUN_API_KEY
-                secretKeySecretRef:
-                  name: porkbun-credentials
-                  key: PORKBUN_SECRET_KEY
+        dns01:
+          webhook:
+            groupName: "acme.noah-hood.io"
+            solverName: porkbun
+            config:
+              apiKeySecretRef:
+                name: porkbun-credentials
+                key: PORKBUN_API_KEY
+              secretKeySecretRef:
+                name: porkbun-credentials
+                key: PORKBUN_SECRET_KEY
