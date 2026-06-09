@@ -2,7 +2,7 @@ module github.com/hoodnoah/certmanager-porkbun-webhook
 
 go 1.23.0
 
-toolchain go1.23.5
+toolchain go1.26.4
 
 require (
 	github.com/cert-manager/cert-manager v1.17.1
