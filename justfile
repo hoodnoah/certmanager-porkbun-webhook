@@ -242,3 +242,19 @@ reset: minikube-delete setup
 # Show available commands
 help:
     @just --list
+
+# Run the cert-manager DNS01 conformance suite (makes REAL Porkbun API calls;
+
+# requires PORKBUN_API_KEY and PORKBUN_SECRET_KEY in the environment)
+test-conformance:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    : "${PORKBUN_API_KEY:?PORKBUN_API_KEY must be set}"
+    : "${PORKBUN_SECRET_KEY:?PORKBUN_SECRET_KEY must be set}"
+    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20
+    BIN="$("$(go env GOPATH)/bin/setup-envtest" use 1.32.x -p path)"
+    export TEST_ASSET_ETCD="$BIN/etcd"
+    export TEST_ASSET_KUBE_APISERVER="$BIN/kube-apiserver"
+    export TEST_ASSET_KUBECTL="$BIN/kubectl"
+    export TEST_ZONE_NAME="noah-hood.io."
+    go test -v -tags conformance -timeout 15m ./...

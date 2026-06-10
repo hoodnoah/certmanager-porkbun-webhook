@@ -57,7 +57,10 @@ func ExtractDomainAndSubdomain(fqdn, zone string) (domain, subdomain string) {
 	return domain, subdomain
 }
 
-// creates a DNS record only after verifying the record does not yet exist.
+// creates a DNS record only after verifying that no record with the SAME
+// CONTENT exists at this name. Multiple records with the same name but
+// different content are valid and required for ACME DNS01: an apex +
+// wildcard certificate produces two challenges at the same FQDN.
 func CreateDNSRecordByNameTypeIfNotExists(pbClient *porkbun.PorkBun, domain, subdomain, content string) error {
 	// fetch existing records
 	records, err := pbClient.RetrieveDNSByNameType(domain, subdomain)
@@ -76,7 +79,11 @@ func CreateDNSRecordByNameTypeIfNotExists(pbClient *porkbun.PorkBun, domain, sub
 	return pbClient.CreateDNSByNameType(domain, subdomain, content)
 }
 
-// deletes a DNS record only after verifying the record does exist
+// deletes the single DNS record matching this name AND content, by record ID.
+// Records at the same name with different content are left untouched —
+// deleting one challenge's record must not destroy a sibling challenge's
+// record (e.g. the other half of an apex + wildcard order). Idempotent:
+// returns nil if no matching record exists.
 func DeleteDNSRecordByNameTypeIfExists(pbClient *porkbun.PorkBun, domain, subdomain, content string) error {
 	// fetch existing records
 	records, err := pbClient.RetrieveDNSByNameType(domain, subdomain)
@@ -84,10 +91,11 @@ func DeleteDNSRecordByNameTypeIfExists(pbClient *porkbun.PorkBun, domain, subdom
 		return err
 	}
 
-	// search for the content in the records; if it exists, delete it
+	// search for the content in the records; if it exists, delete exactly
+	// that record by its ID
 	for _, record := range records {
 		if record.Content == content {
-			return pbClient.DeleteDNSByNameType(domain, subdomain)
+			return pbClient.DeleteDNSByID(domain, record.ID.String())
 		}
 	}
 
