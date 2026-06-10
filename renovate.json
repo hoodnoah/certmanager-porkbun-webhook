@@ -1,6 +1,20 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "description": "k8s.io and sigs.k8s.io libraries follow cert-manager's compatibility band; never update them independently",
+      "matchManagers": ["gomod"],
+      "matchPackageNames": ["k8s.io/**", "sigs.k8s.io/**"],
+      "enabled": false
+    },
+    {
+      "description": "Remind future-me of the band-alignment procedure on cert-manager bumps",
+      "matchManagers": ["gomod"],
+      "matchPackageNames": ["github.com/cert-manager/cert-manager"],
+      "prBodyNotes": [
+        "⚠️ **Band alignment required**: check this version's go.mod for its k8s.io / controller-runtime pins, run `go get k8s.io/apimachinery@<band> k8s.io/client-go@<band> && go mod tidy`, and update the envtest version (`use 1.XX.x`) and setup-envtest ref in both `.gitea/workflows/ci.yaml` and the `test-conformance` justfile recipe."
+      ]
+    }
   ]
 }

@@ -251,8 +251,8 @@ test-conformance:
     set -euo pipefail
     : "${PORKBUN_API_KEY:?PORKBUN_API_KEY must be set}"
     : "${PORKBUN_SECRET_KEY:?PORKBUN_SECRET_KEY must be set}"
-    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20
-    BIN="$("$(go env GOPATH)/bin/setup-envtest" use 1.32.x -p path)"
+    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.23
+    BIN="$("$(go env GOPATH)/bin/setup-envtest" use 1.35.x -p path)"
     export TEST_ASSET_ETCD="$BIN/etcd"
     export TEST_ASSET_KUBE_APISERVER="$BIN/kube-apiserver"
     export TEST_ASSET_KUBECTL="$BIN/kubectl"
