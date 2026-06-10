@@ -51,8 +51,9 @@ jobs:
           # so this stays consistent with the justfile's unprefixed tags
           # (e.g. 0.1.0 -> 0.1.0, 0.1) while tolerating v-prefixed ones.
           tags: |
-            type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
             type=raw,value=latest
 
       - name: Build and push
